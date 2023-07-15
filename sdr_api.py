@@ -1,14 +1,27 @@
 from fastapi import FastAPI, Response, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.requests import Request
 from supabase import create_client, Client
 from pydantic import BaseModel
 from requests import get
 import paho.mqtt.client as mqtt
 import uvicorn, datetime, logging, configparser, threading, concurrent.futures, random, string
+import time
 
 from bin import MessageSerializer
 from bin import ReadingBatcher
 from bin import Reading
+
+
+logger = logging.getLogger(__name__)
+
+# Configure the logger to display log messages to the console
+console_handler = logging.StreamHandler()
+console_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(console_formatter)
+logger.addHandler(console_handler)
+logger.setLevel(logging.INFO)
 
 origins = [
    "127.0.0.1",
@@ -30,14 +43,19 @@ class AuthAPI:
 
     def start(self, supabase: Client, self_auth_username, self_auth_password):
         self.supabase = supabase
-
         self.mqtt_username = self_auth_username
         self.mqtt_password = self_auth_password
-        logging.info("MQTT Username: " + self.mqtt_username)
-        logging.info("MQTT Password: " + self.mqtt_password)
+        logger.info("MQTT Username: " + self.mqtt_username)
+        logger.info("MQTT Password: " + self.mqtt_password)
 
     #Authentication method for EMQX HTTP Auth API. Queries the Supabase server for any entries matching the username and checks if
-    async def auth_mqtt(self, auth_request: AuthBody, response: Response):
+    async def auth_mqtt(self, request: Request):
+        body_bytes = await request.body()
+        body_str = body_bytes.decode()
+        auth_request = AuthBody(** await request.json())
+
+
+        logger.info('Got body: ' + str(auth_request))
         username = auth_request.username
         password = auth_request.password
 
@@ -45,24 +63,21 @@ class AuthAPI:
             if (username == self.mqtt_username and password == self.mqtt_password):
                 logging.info("Authorized self on broker.")
                 self.authed = True
-                response.status_code = status.HTTP_200_OK
-                return AuthResponse(result="allow", is_superuser=True)
+                return JSONResponse(content={'result': 'allow', 'is_superuser': True}, status_code=status.HTTP_200_OK)
 
         logging.info("==== New Client Auth Request ====")
         logging.info("Username:" + username)
         logging.info("Password:" +  password)
 
-        client_params =  self.get_rows_by_id('sdr_units', username)
-        response.status_code = status.HTTP_403_FORBIDDEN
+        client_params =  self.get_rows_by_id('units', username)
 
         if (client_params):
             row = client_params[0]
             if (password == row['mqtt_password']):
-                response.status_code = status.HTTP_200_OK
-                return AuthResponse(result="allow", is_superuser=row['is_superuser'])
+                return JSONResponse(content={'result': 'allow', 'is_superuser': row['is_superuser']}, status_code=status.HTTP_200_OK)
 
-        return AuthResponse(result="deny", is_superuser=False)
-    
+        return JSONResponse(content={'result': 'deny', 'is_superuser': False}, status_code=status.HTTP_403_FORBIDDEN)
+
     # Queries the supabase database for an element with matching ID in table.
     def get_rows_by_id(self, table_name, id):
         try:
@@ -72,9 +87,6 @@ class AuthAPI:
             return None
 
         return response.data if (response.data) else None
-    
-
-
 class TranslationAPI:
     def __init__(self) -> None:
         self.router = APIRouter()
@@ -87,7 +99,7 @@ class TranslationAPI:
         self.mqtt_port = mqtt_port
         self.ingress_topics = ingress_topics
         self.external_ip = external_ip
-
+        time.sleep(5)
         self.initMQTT(self_auth_username, self_auth_password)
 
         self.message_serializer = MessageSerializer.MessageSerializer(self.handleCompressedMessage, self.handleDecompressedMessage, self.max_compression_threads)
@@ -101,44 +113,45 @@ class TranslationAPI:
         self.reading_batch_size = config['COMPRESSION_SETTINGS']['BATCH_SIZE']
         self.max_compression_threads = config['COMPRESSION_SETTINGS']['MAX_THREADS']
         return
-        
+
     def initMQTT(self, self_auth_username, self_auth_password):
         self.mqttc = mqtt.Client(client_id= "translation_api_" + self.external_ip, transport="websockets")
         self.mqttc.on_connect = self.onMQTTConnect
         self.mqttc.on_message = self.onMQTTMessage
         self.mqttc.username_pw_set(self_auth_username, self_auth_password)
 
-        self.mqttc.connect_async(self.mqtt_server, self.mqtt_port)
+        self.mqttc.connect(self.mqtt_server, self.mqtt_port)
         self.mqttc.loop_start()
 
     def onMQTTConnect(self, client, userdata, flags, rc):
         for topic in self.ingress_topics: # Subscribe to all ingress topics.
             self.mqttc.subscribe(topic)
-        
+
     def onMQTTMessage(self, client, userdata, message):
         self.message_serializer.decompress_message(message.topic, message.payload)
         pass
-
     def handleCompressedMessage(self, topic, message):
         self.mqttc.publish(topic, message)
         pass
 
     def handleDecompressedMessage(self, topic, message):
+        logging.info('==== New Ingress Message ====\nTopic: ' + topic)
+        logging.info('Decompressed Message: ' + message)
         if (message['tp'] == "RD"):
             self.handleReadingMessage(topic, message)
-        
+
     def handleReadingMessage(self, topic, message):
         logging.info("Got reading message on topic: " + topic)
         for reading in message['RD']:
-            new_reading = Reading.Reading(module = float(reading['MID']), 
+            new_reading = Reading.Reading(module = float(reading['MID']),
                                         voltage = float(reading['V']),
-                                        frequency = float(reading['F']), 
-                                        apparent_power = float(reading['SP']), 
+                                        frequency = float(reading['F']),
+                                        apparent_power = float(reading['SP']),
                                         power_factor = float(reading['PF']),
                                         kwh_usage = float(reading['kwh']),
                                         timestamp = datetime.datetime.fromtimestamp(float(message['ts'])),
                                         switch_status = bool(reading['state']))
-            
+
             self.reading_batcher.add_reading(new_reading)
 
     # Queries the supabase database for an element with matching ID in table.
@@ -150,7 +163,7 @@ class TranslationAPI:
             return None
 
         return response.data if (response.data) else None
-    
+
     def stop(self):
         self.mqttc.disconnect()
         self.reading_batcher.stop()
@@ -183,6 +196,14 @@ def randomword(length):
 
     return word
 
+def startApp(external_ip, supabase, mqtt_server, mqtt_port, mqtt_self_auth_username, mqtt_self_auth_password, ingress_topics):
+    try:
+        auth_api.start(supabase, mqtt_self_auth_username, mqtt_self_auth_password)
+        translation_api.start(external_ip, supabase, mqtt_server, mqtt_port, mqtt_self_auth_username, mqtt_self_auth_password, ingress_topics)
+    except Exception as e:
+        logging.error(str(e))
+        return
+
 def main():
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -200,6 +221,7 @@ def main():
 
     if (not request.data):
         logging.error('No translation broker with this address was found.')
+
         return
 
     request = request.data[0]
@@ -207,9 +229,10 @@ def main():
     if (not bool(request['is_enabled'])):
         logging.error("Translation broker with this address is not enabled.")
         return
-    
+
     api_port = request['api_port']
-    mqtt_server = "localhost" if (request['broker_address'] == external_ip) else request['broker_address']
+    api_address ="localhost" if (request['api_address'] == external_ip.strip()) else request['api_address']
+    mqtt_server = "localhost" if (request['broker_address'] == external_ip.strip()) else request['broker_address']
     mqtt_port = request['broker_port']
     broker_id = request['id']
 
@@ -227,17 +250,10 @@ def main():
     mqtt_self_auth_username = randomword(16)
     mqtt_self_auth_password = randomword(24)
 
-    api_thread = threading.Thread(target=startAPI, args = [external_ip, api_port])
-
-    try:
-        auth_api.start(supabase, mqtt_self_auth_username, mqtt_self_auth_password)
-        translation_api.start(external_ip, supabase, mqtt_server, mqtt_port, mqtt_self_auth_username, mqtt_self_auth_password, ingress_topics)
-    except Exception as e:
-        logging.error(str(e))
-        return
-
-    api_thread.join()
-    translation_api.stop()
+    api_thread = threading.Thread(target=startAPI, args = [api_address, api_port])
+    api_thread.start()
+    app_thread = threading.Thread(target=startApp, args = [external_ip, supabase, mqtt_server, mqtt_port, mqtt_self_auth_username, mqtt_self_auth_password, ingress_topics])
+    app_thread.start()
 
 if __name__ == "__main__":
     main()
