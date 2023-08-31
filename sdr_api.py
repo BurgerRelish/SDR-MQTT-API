@@ -27,66 +27,8 @@ origins = [
    "127.0.0.1",
 ]
 
-class AuthBody(BaseModel):
-    username: str
-    password: str
-
-class AuthResponse(BaseModel):
-    result: str
-    is_superuser: bool
-
-class AuthAPI:
-    def __init__(self) -> None:
-        self.router = APIRouter()
-        self.router.add_route('/auth', self.auth_mqtt, methods=['POST'])
-        self.authed = False
-
-    def start(self, supabase: Client, self_auth_username, self_auth_password):
-        self.supabase = supabase
-        self.mqtt_username = self_auth_username
-        self.mqtt_password = self_auth_password
-        logger.info("MQTT Username: " + self.mqtt_username)
-        logger.info("MQTT Password: " + self.mqtt_password)
-
-    #Authentication method for EMQX HTTP Auth API. Queries the Supabase server for any entries matching the username and checks if
-    async def auth_mqtt(self, request: Request):
-        body_bytes = await request.body()
-        body_str = body_bytes.decode()
-        auth_request = AuthBody(** await request.json())
 
 
-        logger.info('Got body: ' + str(auth_request))
-        username = auth_request.username
-        password = auth_request.password
-
-        if (not self.authed):
-            if (username == self.mqtt_username and password == self.mqtt_password):
-                logging.info("Authorized self on broker.")
-                self.authed = True
-                return JSONResponse(content={'result': 'allow', 'is_superuser': True}, status_code=status.HTTP_200_OK)
-
-        logging.info("==== New Client Auth Request ====")
-        logging.info("Username:" + username)
-        logging.info("Password:" +  password)
-
-        client_params =  self.get_rows_by_id('units', username)
-
-        if (client_params):
-            row = client_params[0]
-            if (password == row['mqtt_password']):
-                return JSONResponse(content={'result': 'allow', 'is_superuser': row['is_superuser']}, status_code=status.HTTP_200_OK)
-
-        return JSONResponse(content={'result': 'deny', 'is_superuser': False}, status_code=status.HTTP_403_FORBIDDEN)
-
-    # Queries the supabase database for an element with matching ID in table.
-    def get_rows_by_id(self, table_name, id):
-        try:
-            response = self.supabase.table(table_name).select("*").eq('id', id).execute()
-        except:
-            logging.error("No data from supabase")
-            return None
-
-        return response.data if (response.data) else None
 class TranslationAPI:
     def __init__(self) -> None:
         self.router = APIRouter()
