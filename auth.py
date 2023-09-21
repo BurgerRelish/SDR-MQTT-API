@@ -1,5 +1,7 @@
 import logging
-import jwt, time
+import datetime
+import time
+import jwt
 from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Request, HTTPException
 
@@ -8,12 +10,13 @@ JWT_ALGORITHM = "HS256"
 
 def encode_jwt(payload: dict[str, any]) -> str:
     """Signs a JWT with the provided payload and secret"""
+    
     return jwt.encode(payload=payload, key=JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def decode_jwt(token: str) -> dict:
     try:
         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return decoded_token if decoded_token["expires"] >= time.time() else None
+        return decoded_token
     except Exception as e:
         print(e)
         return {}
@@ -31,7 +34,6 @@ def create_emqx_jwt(expiry_s: int, username: str, publish_topics: list[str], sub
     }
 
     return encode_jwt(ret)
-
 
 class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):
