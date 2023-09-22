@@ -4,9 +4,12 @@ import time
 import jwt
 from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Request, HTTPException
+import configparser
 
-JWT_SECRET = "sectret123"
-JWT_ALGORITHM = "HS256"
+config = configparser.ConfigParser()
+config.read("configuration.ini")
+JWT_SECRET = config["API"]["jwt_secret"]
+JWT_ALGORITHM = config["API"]["jwt_algorithm"]
 
 def encode_jwt(payload: dict[str, any]) -> str:
     """Signs a JWT with the provided payload and secret"""

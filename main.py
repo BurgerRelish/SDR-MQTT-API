@@ -7,7 +7,7 @@ from starlette.background import BackgroundTask
 
 from supabase import Client, create_client
 
-import brotli, base64, datetime, json, time, logging
+import brotli, base64, datetime, json, time, logging, configparser
 import requests
 
 from auth import create_emqx_jwt, JWTBearer, decode_jwt, encode_jwt
@@ -25,23 +25,23 @@ from models import (
     BrokerPublishMessage
 )
 
+
 app = FastAPI()
 
-# Move to config
-emqx_broker_ip = "localhost"
-emqx_broker_http_port = 8081
-emqx_api_key = "1535fe6c47b8ae00"
-emqx_secret = "9AnLg9B2shVwl9Cv5cFMFLGzLV4RINYZQfMeIqGKzrYt1B"
-jwt_secret = "secret123"
-supabase_url = "https://pdmoslivyqyvjcbgtjek.supabase.co"
-supabase_service_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkbW9zbGl2eXF5dmpjYmd0amVrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NTI5Mzc2OCwiZXhwIjoyMDEwODY5NzY4fQ.yenF8AVYyR5PMSN7AD8sLEriFMTxmKNC8YVTTO_XiYo"
+# Config variables
 
-# Initialize your Supabase client
-supabase_client = create_client(supabase_url, supabase_service_key)
+supabase_url: str
+supabase_service_key: str
+emqx_broker_ip: str
+emqx_broker_http_port: int
+emqx_api_key: str
+emqx_secret: str
+api_hostname: str
+api_port: str
 
-# JWT Auth to access EMQX HTTP API
-emqx_auth_header = "Basic " + base64.b64encode((emqx_api_key + ":" + emqx_secret).encode()).decode()
-
+supabase_client: Client
+emqx_headers: str
+emqx_broker_url: str
 
 async def decompress_message(message: str) -> str:
     return str(brotli.decompress(base64.b64decode(message)).decode('utf-8'))
@@ -65,8 +65,7 @@ async def publish_message(topic: str, message: DecompressedDataMessage):
     )
 
     # Send message to broker with post request
-    result = requests.post("http://localhost:18083/api/v5/publish",
-                           json = request_data.model_dump(), headers={"Authorization" : emqx_auth_header, "Content-Type": "application/json"})
+    result = requests.post(emqx_broker_url, json = request_data.model_dump(), headers=emqx_headers)
     
     if (result.status_code == 200):
         return {"result" : "ok", "message" : "The message was delivered to at least one subscriber."}
@@ -262,10 +261,30 @@ async def receive_mqtt_webhook(data: MQTTBrokerWebhook):
 #     return Response(content=res_body, status_code=response.status_code, 
 #         headers=dict(response.headers), media_type=response.media_type, background=task)
 
+def load_config():
+    global supabase_url, supabase_service_key, emqx_broker_ip, emqx_broker_http_port, emqx_api_key, emqx_secret, api_hostname, api_port, supabase_client, emqx_headers, emqx_broker_url
+
+    config = configparser.ConfigParser()
+    config.read("configuration.ini")
+    supabase_url = config["SUPABASE"]["supabase_url"]
+    supabase_service_key = config["SUPABASE"]["supabase_service_key"]
+    emqx_broker_ip = config["EMQX"]["emqx_broker_ip"]
+    emqx_broker_http_port = int(config["EMQX"]["emqx_broker_http_port"])
+    emqx_api_key = config["EMQX"]["emqx_api_key"]
+    emqx_secret = config["EMQX"]["emqx_secret"]
+    api_hostname = config["API"]["hostname"]
+    api_port = int(config["API"]["port"])
+
+    # Initialize Supabase client
+    supabase_client = create_client(supabase_url, supabase_service_key)
+
+    # JWT Auth to access EMQX HTTP API
+    emqx_headers = { "Authroization" : "Basic " + base64.b64encode((emqx_api_key + ":" + emqx_secret).encode()).decode(),
+                    "Content-Type": "application/json" }
+    emqx_broker_url = "http://" + emqx_broker_ip + ":" + str(emqx_broker_http_port) + "/api/v5/publish"
+
 if __name__ == "__main__":
     import uvicorn
-    print(encode_jwt({
-        "broker_id" : "51b99c79-9541-4df2-9863-fb6409245754"
-    }))
+    load_config()
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=api_hostname, port=api_port)
