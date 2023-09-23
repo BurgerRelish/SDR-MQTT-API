@@ -1,0 +1,26 @@
+{
+    "type": 0,
+    "data": {
+      "action": "string",
+      "unit_rules": [
+        {
+          "priority": 0,
+          "expression": "string",
+          "command": "string"
+        }
+      ],
+      "module_rules": [
+        {
+          "module_id": "string",
+          "action": "string",
+          "rules": [
+            {
+              "priority": 0,
+              "expression": "string",
+              "command": "string"
+            }
+          ]
+        }
+      ]
+    }
+}

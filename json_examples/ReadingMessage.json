@@ -1,0 +1,34 @@
+{
+    "type": 0,
+    "data": {
+        "period_start": 456,
+        "period_end": 123,
+        "data": [
+            {
+                "module_id": "d0f96266-6d4b-46cb-9c7b-c31142f6ab30",
+                "sample_count": 1,
+                "mean_voltage": 1.234,
+                "mean_frequency": 4.567,
+                "apparent_power": [
+                    1.234,
+                    2.345,
+                    3.456,
+                    4.567
+                ],
+                "power_factor": [
+                    1.234,
+                    2.345,
+                    3.456,
+                    4.567
+                ],
+                "kwh_usage": 19.012,
+                "state_changes": [
+                    {
+                    "state": true,
+                    "timestamp": 123456
+                    }
+                ]
+            }
+        ]
+    }
+}
