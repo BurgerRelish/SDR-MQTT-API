@@ -1,34 +1,111 @@
+
 {
     "type": 0,
     "data": {
-        "period_start": 456,
-        "period_end": 123,
-        "data": [
+      "period_start": 456,
+      "period_end": 123,
+      "data": [
+        {
+          "module_id": "d0f96266-6d4b-46cb-9c7b-c31142f6ab30",
+          "sample_count": 1,
+          "mean_voltage": 1.234,
+          "mean_frequency": 4.567,
+          "apparent_power": [
+            1.234,
+            2.345,
+            3.456,
+            4.567
+          ],
+          "power_factor": [
+            0.9,
+            0.85,
+            0.92,
+            0.88
+          ],
+          "kwh_usage": 19.012,
+          "state_changes": [
             {
-                "module_id": "d0f96266-6d4b-46cb-9c7b-c31142f6ab30",
-                "sample_count": 1,
-                "mean_voltage": 1.234,
-                "mean_frequency": 4.567,
-                "apparent_power": [
-                    1.234,
-                    2.345,
-                    3.456,
-                    4.567
-                ],
-                "power_factor": [
-                    1.234,
-                    2.345,
-                    3.456,
-                    4.567
-                ],
-                "kwh_usage": 19.012,
-                "state_changes": [
-                    {
-                    "state": true,
-                    "timestamp": 123456
-                    }
-                ]
+              "state": true,
+              "timestamp": 123456
             }
-        ]
+          ]
+        },
+        {
+          "module_id": "a1b2c3d4-e5f6-7890",
+          "sample_count": 2,
+          "mean_voltage": 1.456,
+          "mean_frequency": 4.678,
+          "apparent_power": [
+            1.456,
+            2.567,
+            3.678,
+            4.789
+          ],
+          "power_factor": [
+            0.91,
+            0.87,
+            0.94,
+            0.89
+          ],
+          "kwh_usage": 20.345,
+          "state_changes": [
+            {
+              "state": false,
+              "timestamp": 234567
+            }
+          ]
+        },
+        {
+          "module_id": "x1y2z3a4-b5c6-7890",
+          "sample_count": 3,
+          "mean_voltage": 1.345,
+          "mean_frequency": 4.789,
+          "apparent_power": [
+            1.345,
+            2.456,
+            3.567,
+            4.678
+          ],
+          "power_factor": [
+            0.92,
+            0.88,
+            0.95,
+            0.90
+          ],
+          "kwh_usage": 18.567,
+          "state_changes": [
+            {
+              "state": true,
+              "timestamp": 345678
+            }
+          ]
+        },
+        {
+          "module_id": "m5n6o7p8-q9r0-1234",
+          "sample_count": 4,
+          "mean_voltage": 1.567,
+          "mean_frequency": 4.890,
+          "apparent_power": [
+            1.567,
+            2.678,
+            3.789,
+            4.890
+          ],
+          "power_factor": [
+            0.93,
+            0.89,
+            0.96,
+            0.91
+          ],
+          "kwh_usage": 21.678,
+          "state_changes": [
+            {
+              "state": false,
+              "timestamp": 456789
+            }
+          ]
+        }
+      ]
     }
-}
+  }
+  

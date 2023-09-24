@@ -1,7 +1,7 @@
 {
     "type": 0,
     "data": {
-      "action": "string",
+      "action": 0,
       "unit_rules": [
         {
           "priority": 0,

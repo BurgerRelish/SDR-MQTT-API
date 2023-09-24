@@ -119,9 +119,11 @@ async def create_unit_token(user_id: str, unit_id: str) -> str:
         }
     ).eq("id", unit_id).execute()
 
+
+
     ret = ControlUnitJWTInfo(
-        broker_address="",
-        port=1234,
+        address="192.168.3.23",
+        port=1883,
         exp=int(time.time() + 3600 * 24 * 365 * 10), # Expire after 10 years.
         acl=await get_acl(unit_id)
     )
@@ -237,17 +239,15 @@ async def insert_readings(data: ReadingMessage):
 @app.post("/mqtt/v1/ingress", dependencies=[Depends(BrokerJWTBearer())])
 async def receive_mqtt_webhook(data: BrokerWebhook):
     try:
-        # Check the compression field for compression type ('br' for Brotli)
-        if data.data.e == 0: # Brotli field.
-            # Decompress the 'm' field from Brotli
-            decompressed_data = await decompress_message_brotli(data.data.m)
+        # Decompress the data.
+        decompressed_data = await decompress_message_brotli(data.data)
 
-            # Parse the data as Ingress Message
-            decompressed_data_message = IngressMessage.model_validate_json(decompressed_data)
+        # Parse the data as Ingress Message
+        decompressed_data_message = IngressMessage.model_validate_json(decompressed_data)
 
-            # Check the 'type' field for data type
-            if decompressed_data_message.type == 0: # Type 0 - Reading
-                await insert_readings(decompressed_data_message.data)
+        # Check the 'type' field for data type
+        if decompressed_data_message.type == 0: # Type 0 - Reading
+            await insert_readings(decompressed_data_message.data)
 
             return {"result" : "ok", "message": "success"}
         else:
@@ -313,30 +313,5 @@ if __name__ == "__main__":
     print("Broker Token: " + encode_broker_jwt({
         "test" : "test"
     }))
-
-    print (IngressMessage(
-        type=0,
-        data= ReadingMessage(
-            period_end=123,
-            period_start=456,
-            data=[
-                ReadingDataItem(
-                    module_id="mid",
-                    sample_count=1,
-                    mean_voltage=1.234,
-                    mean_frequency=4.567,
-                    apparent_power=[1.234, 2.345, 3.456, 4.567],
-                    power_factor=[1.234, 2.345, 3.456, 4.567],
-                    kwh_usage=19.012,
-                    state_changes=[
-                        StateChangeItem(
-                            state=True,
-                            timestamp=123456
-                        )
-                    ]
-                )
-            ]
-        )
-    ).model_dump_json())
 
     uvicorn.run(app, host=api_hostname, port=api_port)

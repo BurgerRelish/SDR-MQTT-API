@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Union
+from typing import List, Union, Optional
 
 
 
@@ -26,10 +26,10 @@ class ReadingDataItem(BaseModel):
     sample_count: int
     mean_voltage: float
     mean_frequency: float
-    apparent_power: List[float] # [mean, max, iqr, kurtosis]
-    power_factor: List[float] # [mean, max, iqr, kurtosis]
+    apparent_power: List[float]  # [mean, max, iqr, kurtosis]
+    power_factor: List[float]  # [mean, max, iqr, kurtosis]
     kwh_usage: float
-    state_changes: List[StateChangeItem]
+    state_changes: Optional[List[StateChangeItem]]  # Allow an empty list
 
 class ReadingMessage(BaseModel):
     """
@@ -64,9 +64,15 @@ class DeviceRule(BaseModel):
 class ModuleRuleUpdate(BaseModel):
     """
     Per module rules to be sent to the device.
+
+    Action:
+        - 0 - "append" - Appends the command to the current commands.
+        - 1 - "replace" - Replaces the current commands with the provided one(s).
+        - 2 -  "exec" - Directly run the command on the module.
+        - 3 - "execif" - Executes the command if the expression evaluates true.
     """
     module_id: str
-    action: str
+    action: int
     rules: List[DeviceRule]
 
 class RuleUpdateMessage(BaseModel):
@@ -74,12 +80,12 @@ class RuleUpdateMessage(BaseModel):
     Packet sent to the control module to configure rules.
 
     Action:
-        - "append" - Appends the command to the current commands.
-        - "replace" - Replaces the current commands with the provided one(s).
-        - "exec" - Directly run the command on the module.
-        - "execif" - Executes the command if the expression evaluates true.
+        - 0 - "append" - Appends the command to the current commands.
+        - 1 - "replace" - Replaces the current commands with the provided one(s).
+        - 2 -  "exec" - Directly run the command on the module.
+        - 3 - "execif" - Executes the command if the expression evaluates true.
     """
-    action: str
+    action: int
     unit_rules: List[DeviceRule]
     module_rules: List[ModuleRuleUpdate]
 
@@ -99,23 +105,13 @@ class EgressMessage(BaseModel):
     type: int
     data: RuleUpdateMessage
 
-
-# Common Packets
-
-class MQTTDataPacket(BaseModel):
-    """ Format of the transmission packet for ALL MQTT messages.
-
-    Values: 
-        - `e` - Message Compression type
-            - 0 - Brotli Compression
-        - `m` - base64 encoded, compressed message data.
-    """
-    e: int
-    m: str
-
 """
 EMQX Broker Communication
 """
+
+class MQTTDataPacket(BaseModel):
+    e: int
+    m: str
 
 class BrokerPublishMessage(BaseModel):
     """Format of HTTP POST request to publish message to topic."""
@@ -134,7 +130,7 @@ class BrokerWebhook(BaseModel):
     """
     clientId: str
     topic: str
-    data: MQTTDataPacket
+    data: str
 
 class ACL(BaseModel):
     """Format of the Access Control List for the EMQX broker."""
@@ -147,7 +143,7 @@ class ControlUnitJWTInfo(BaseModel):
     """
     Data used to generate a new JWT access token for the unit.
     """
-    broker_address: str
+    address: str
     port: int
     exp: int
     acl: ACL
