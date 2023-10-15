@@ -37,7 +37,7 @@ class ReadingMessage(BaseModel):
     """
     period_start: int
     period_end: int
-    data: List[ReadingDataItem]
+    readings: List[ReadingDataItem]
 
 class IngressMessage(BaseModel):
     """Format of MQTTDataPacket.msg when decompressed. Should be used to compress to this format when sending to the device.
@@ -75,9 +75,9 @@ class ModuleRuleUpdate(BaseModel):
     action: int
     rules: List[DeviceRule]
 
-class RuleUpdateMessage(BaseModel):
+class UnitRuleUpdate(BaseModel):
     """
-    Packet sent to the control module to configure rules.
+    Per unit rules to be sent to the device.
 
     Action:
         - 0 - "append" - Appends the command to the current commands.
@@ -86,8 +86,41 @@ class RuleUpdateMessage(BaseModel):
         - 3 - "execif" - Executes the command if the expression evaluates true.
     """
     action: int
-    unit_rules: List[DeviceRule]
+    rules: List[DeviceRule]
+
+class RuleUpdateMessage(BaseModel):
+    """
+    Packet sent to the control module to configure rules.
+
+    """
+    unit_rules: UnitRuleUpdate
     module_rules: List[ModuleRuleUpdate]
+
+class ScheduleItem(BaseModel):
+    """Schedule item."""
+    module_id: str
+    state: bool
+    timestamp: int
+    period: int
+    count: int
+
+class ScheduleUpdateMessage(BaseModel):
+    """Packet sent to the control module to configure schedule.
+    
+    Action:
+    - 0 - "append" - Appends the command to the current schedule.
+    - 1 - "replace" - Replaces the current schedule with the provided one(s).
+    """
+    action: int
+    schedule: List[ScheduleItem]
+
+
+class ControlUnitParameters(BaseModel):
+    """
+    Parameters relating to the operation of the control unit.
+    """
+    sample_period: int # Number of seconds between sampling a module.
+    serialization_period: int # Number of seconds between sending readings to the server.
 
 # Egress Packets
 
@@ -97,13 +130,15 @@ class EgressMessage(BaseModel):
 
         `type` type of data contained:
         - 0 - rules
+        - 1 - schedule
+        - 2 - parameters
 
         `data` - contained data.
 
     """
 
     type: int
-    data: RuleUpdateMessage
+    data: Union[RuleUpdateMessage, ScheduleUpdateMessage, ControlUnitParameters]
 
 """
 EMQX Broker Communication

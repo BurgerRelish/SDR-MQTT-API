@@ -1,0 +1,30 @@
+
+{ 
+    "priority" : 1,
+    "expression" : "TSP <= 5000 && Day == 1 && hr > 12",
+    "command" : "setVar(bool, myBool, 1);"
+},
+
+{
+    "priority" : 2,
+    "expression" : "TSP > 5000 && Day == 1 && hr < 12",
+    "command" : "setVar(bool, myBool, 0);"
+}
+
+{
+    "priority" : 10,
+    "expression" : "myBool",
+    "command" : "setState(1); setVar(bool, myBool, 1);"
+}
+
+{
+    "priority" : 10,
+    "expression" : "!myBool",
+    "command" : "setState(0); setVar(bool, myBool, 0);"
+}
+
+{
+    "var1" : 1,
+    "var2" : "string",
+    "array" : [true, false]
+}

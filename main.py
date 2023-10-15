@@ -25,7 +25,10 @@ from models import (
     RuleUpdateMessage,
     DeviceRule,
     ModuleRuleUpdate,
-    StateChangeItem
+    StateChangeItem,
+    ScheduleUpdateMessage,
+    ScheduleItem,
+    ControlUnitParameters
 )
 
 logging.basicConfig(filename='info.log', level=logging.DEBUG)
@@ -130,8 +133,26 @@ async def create_unit_token(user_id: str, unit_id: str) -> str:
 
     return encode_broker_jwt(ret.model_dump())
 
-@app.post("/mqtt/v1/send", dependencies=[Depends(JWTBearer())])
-async def send_command(unit_id: str, payload: RuleUpdateMessage):
+@app.post("/mqtt/v1/schedule", dependencies=[Depends(JWTBearer())])
+async def send_schedule(unit_id: str, payload: ScheduleUpdateMessage):
+    to_send = EgressMessage(
+        type=1,
+        data=payload
+    )
+
+    return await publish_message("/egress/" + unit_id, to_send)
+
+@app.post("/mqtt/v1/parameters", dependencies=[Depends(JWTBearer())])
+async def send_parameters(unit_id: str, payload: ControlUnitParameters):
+    to_send = EgressMessage(
+        type=2,
+        data=payload
+    )
+
+    return await publish_message("/egress/" + unit_id, to_send)
+
+@app.post("/mqtt/v1/rules", dependencies=[Depends(JWTBearer())])
+async def send_rules(unit_id: str, payload: RuleUpdateMessage):
     if payload.action == "replace": # Replace the rules in the database
         pass
     elif payload.action == "append": # Add the rules to the database
@@ -204,7 +225,7 @@ async def insert_readings(data: ReadingMessage):
     period_end = datetime.datetime.fromtimestamp(data.period_end).strftime("%Y-%m-%d %H:%M:%S+00")
 
     # Unpack the reading data into the two lists.
-    for reading in data.data:
+    for reading in data.readings:
         readings_to_insert.append({
             "iqr_apparent_power": reading.apparent_power[2],
             "iqr_power_factor": reading.power_factor[2],

@@ -1,0 +1,7 @@
+{
+    "type" : 1,
+    "data" : {
+        "sample_interval" : 10,
+        "target_sample_size" : 30
+    }
+}

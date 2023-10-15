@@ -1,0 +1,13 @@
+{
+    "action" : 0,
+    "schedule" : [
+        {
+            "module_id" : "sDsPS7DssbhgsKdwCmyghWv4N6vGUD7CwRq",
+            "state" : true,
+            "timestamp" : 1696790376,
+            "period" : 60,
+            "count": 1
+        }
+    ]
+}
+
