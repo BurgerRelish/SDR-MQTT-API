@@ -122,11 +122,13 @@ async def create_unit_token(user_id: str, unit_id: str) -> str:
         }
     ).eq("id", unit_id).execute()
 
-
-
+    broker_info = supabase_client.table("control_units").select("id, brokers(broker)").eq("id", unit_id).single().execute()
+    if (not broker_info):
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Not provisioned.")
+        
     ret = ControlUnitJWTInfo(
-        address="192.168.3.23",
-        port=1883,
+        address=broker_info["address"],
+        port=broker_info["port"],
         exp=int(time.time() + 3600 * 24 * 365 * 10), # Expire after 10 years.
         acl=await get_acl(unit_id)
     )
