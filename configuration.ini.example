@@ -1,0 +1,18 @@
+[SUPABASE]
+supabase_url = 
+supabase_service_key = 
+
+[EMQX]
+emqx_broker_ip = localhost
+emqx_broker_http_port = 18083
+emqx_api_key = 
+emqx_secret = 
+emqx_jwt_secret = 
+
+[API]
+hostname = localhost
+port = 8079
+jwt_algorithm = HS256
+jwt_secret = 
+
+
