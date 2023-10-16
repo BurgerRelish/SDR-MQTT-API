@@ -55,7 +55,7 @@ async def decompress_message_brotli(message: str) -> str:
     return str(brotli.decompress(base64.b64decode(message)).decode('utf-8'))
 
 async def compress_message(message: str) -> MQTTDataPacket:
-    ret = MQTTDataPacket(e=0, m=str(base64.b64encode(brotli.compress(message.encode('utf-8'))).decode('UTF-8')))  # Encode the message with utf-8, compress it, then convert the bytes to base64, and return a string of it.
+    ret = str(base64.b64encode(brotli.compress(message.encode('utf-8'))).decode('UTF-8'))  # Encode the message with utf-8, compress it, then convert the bytes to base64, and return a string of it.
     return ret
 
 async def publish_message(topic: str, message: EgressMessage):
@@ -67,7 +67,7 @@ async def publish_message(topic: str, message: EgressMessage):
     request_data = BrokerPublishMessage(
         payload_encoding="plain",
         topic = topic,
-        payload = payload.model_dump_json(),
+        payload = payload,
         qos=0,
         retain=False,
     )
@@ -113,7 +113,7 @@ async def get_acl(unit_id: str) -> ACL:
 
 @app.get("/mqtt/v1/auth", dependencies=[Depends(JWTBearer())])
 async def create_unit_token(user_id: str, unit_id: str) -> str:
-    """ Creates an MQTT access token for a control unit. Assosciates the unit with a user, and queries the database for assigned topics. Raises a 406 error if no topics are provisioned for the device.
+    """ Creates an MQTT access token for a control unit. Assosciates the unit with a user, and queries the database for assigned topics. Raises a 406 error if no topics are provisioned for t>
     """
     # Assign the unit to the user.
     supabase_client.table("control_units").update(
@@ -122,18 +122,19 @@ async def create_unit_token(user_id: str, unit_id: str) -> str:
         }
     ).eq("id", unit_id).execute()
 
-    broker_info = supabase_client.table("control_units").select("id, brokers(broker)").eq("id", unit_id).single().execute()
+    broker_info = supabase_client.table("control_units").select("id, brokers(address, port)").eq("id", unit_id).single().execute()
     if (not broker_info):
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Not provisioned.")
-        
+    print(broker_info)        
     ret = ControlUnitJWTInfo(
-        address=broker_info["address"],
-        port=broker_info["port"],
+        address=broker_info.data["brokers"]["address"],
+        port=broker_info.data["brokers"]["port"],
         exp=int(time.time() + 3600 * 24 * 365 * 10), # Expire after 10 years.
         acl=await get_acl(unit_id)
     )
 
     return encode_broker_jwt(ret.model_dump())
+
 
 @app.post("/mqtt/v1/schedule", dependencies=[Depends(JWTBearer())])
 async def send_schedule(unit_id: str, payload: ScheduleUpdateMessage):

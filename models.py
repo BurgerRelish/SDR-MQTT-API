@@ -121,6 +121,7 @@ class ControlUnitParameters(BaseModel):
     """
     sample_period: int # Number of seconds between sampling a module.
     serialization_period: int # Number of seconds between sending readings to the server.
+    mode: int # 0 - "rule engine", 1 - "schedule"
 
 # Egress Packets
 
