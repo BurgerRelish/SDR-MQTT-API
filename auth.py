@@ -50,7 +50,6 @@ class JWTBearer(HTTPBearer):
             isTokenValid = True
         return isTokenValid
         
-        
 def encode_broker_jwt(payload: dict[str, any]) -> str:
     """Signs a JWT with the provided payload and secret"""
     
