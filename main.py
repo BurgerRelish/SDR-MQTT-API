@@ -4,7 +4,7 @@ from starlette.background import BackgroundTask
 from fastapi.routing import APIRoute
 from starlette.types import Message
 from starlette.background import BackgroundTask
-
+from fastapi.middleware.cors import CORSMiddleware
 from supabase import Client, create_client
 
 import brotli, base64, datetime, json, time, logging, configparser, logging
@@ -35,6 +35,16 @@ logging.basicConfig(filename='info.log', level=logging.DEBUG)
 
 app = FastAPI()
 
+origins = ["*"]
+
+# Configure CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Config variables
 
 supabase_url: str
