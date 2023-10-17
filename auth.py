@@ -1,8 +1,6 @@
-import logging
-import datetime
-import time
 import jwt
-from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials
+from jwt.exceptions import ExpiredSignatureError, DecodeError
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Request, HTTPException
 import configparser
 
@@ -28,31 +26,29 @@ def decode_jwt(token: str) -> dict:
 
 class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
+        super().__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request):
-        credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
+        credentials: HTTPAuthorizationCredentials = await super().__call__(request)
         if credentials:
             if credentials.scheme != "Bearer":
-                raise HTTPException(status_code=403, detail="Invalid authentication scheme.")
+                raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
             if not self.verify_jwt(credentials.credentials):
-                raise HTTPException(status_code=403, detail="Invalid token or expired token.")
+                raise HTTPException(status_code=401, detail="Invalid token or expired token.")
             return credentials.credentials
         else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
+            raise HTTPException(status_code=401, detail="Invalid authorization code.")
 
     def verify_jwt(self, jwtoken: str) -> bool:
-        is_token_valid: bool = False
-
         try:
-            payload = decode_jwt(jwtoken)
-        except:
-            payload = None
-        if payload:
-            is_token_valid = True
-        return is_token_valid
-
-
+            payload = jwt.decode(jwtoken, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            return True
+        except ExpiredSignatureError:
+            return False  # Token has expired
+        except DecodeError:
+            return False  # Token is invalid
+        
+        
 def encode_broker_jwt(payload: dict[str, any]) -> str:
     """Signs a JWT with the provided payload and secret"""
     
