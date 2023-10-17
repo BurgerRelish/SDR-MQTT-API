@@ -3,6 +3,7 @@ from jwt.exceptions import ExpiredSignatureError, DecodeError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Request, HTTPException
 import configparser
+import logging
 
 config = configparser.ConfigParser()
 config.read("configuration.ini")
@@ -18,7 +19,9 @@ def encode_jwt(payload: dict[str, any]) -> str:
 
 def decode_jwt(token: str) -> dict:
     try:
-        decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        logging.log(logging.INFO, "JWT_SECRET: " + JWT_SECRET)
+        logging.log(logging.INFO, "Decoding token: " + token)
+        decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], audience="authenticated")
         return decoded_token
     except Exception as e:
         print(e)
