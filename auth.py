@@ -23,6 +23,15 @@ def decode_jwt(token: str) -> dict:
     except Exception as e:
         print(e)
         return {}
+    
+def verify_jwt(self, jwtoken: str) -> bool:
+    try:
+        jwt.decode(jwtoken, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return True
+    except ExpiredSignatureError:
+        return False  # Token has expired
+    except DecodeError:
+        return False  # Token is invalid
 
 class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):
@@ -33,20 +42,13 @@ class JWTBearer(HTTPBearer):
         if credentials:
             if credentials.scheme != "Bearer":
                 raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
-            if not self.verify_jwt(credentials.credentials):
+            if not verify_jwt(credentials.credentials):
                 raise HTTPException(status_code=401, detail="Invalid token or expired token.")
             return credentials.credentials
         else:
             raise HTTPException(status_code=401, detail="Invalid authorization code.")
 
-    def verify_jwt(self, jwtoken: str) -> bool:
-        try:
-            payload = jwt.decode(jwtoken, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            return True
-        except ExpiredSignatureError:
-            return False  # Token has expired
-        except DecodeError:
-            return False  # Token is invalid
+
         
         
 def encode_broker_jwt(payload: dict[str, any]) -> str:
