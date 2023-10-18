@@ -166,11 +166,6 @@ async def send_parameters(unit_id: str, payload: ControlUnitParameters):
 
 @app.post("/mqtt/v1/rules", dependencies=[Depends(JWTBearer())])
 async def send_rules(unit_id: str, payload: RuleUpdateMessage):
-    if payload.action == "replace": # Replace the rules in the database
-        pass
-    elif payload.action == "append": # Add the rules to the database
-        pass
-
     to_send = EgressMessage(
         type=0,
         data=payload
