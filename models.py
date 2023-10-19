@@ -122,6 +122,8 @@ class ControlUnitParameters(BaseModel):
     sample_period: int # Number of seconds between sampling a module.
     serialization_period: int # Number of seconds between sending readings to the server.
     mode: int # 0 - "rule engine", 1 - "schedule"
+    format_device: bool # Erase all rule and schedule data on the device.
+    reset_device: bool # Erase all data on the device, factory resetting it.
 
 # Egress Packets
 
