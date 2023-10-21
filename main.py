@@ -28,7 +28,8 @@ from models import (
     StateChangeItem,
     ScheduleUpdateMessage,
     ScheduleItem,
-    ControlUnitParameters
+    ControlUnitParameters,
+    TOUSchedule
 )
 
 logging.basicConfig(filename='info.log', level=logging.DEBUG)
@@ -173,6 +174,15 @@ async def send_rules(unit_id: str, payload: RuleUpdateMessage):
 
     return await publish_message("/egress/" + unit_id, to_send)
 
+@app.post("/mqtt/v1/tou", dependencies=[Depends(JWTBearer())])
+async def send_tou_structure(unit_id: str, payload: TOUSchedule):
+    to_send = EgressMessage(
+        type=3,
+        data=payload
+    )
+
+    return await publish_message("/egress/" + unit_id, to_send)
+
 @app.get("/mqtt/v1/sync", dependencies=[Depends(JWTBearer())])
 async def sync_commands(unit_id: str):
     """Sync the database and Control Unit commands."""
@@ -287,28 +297,28 @@ async def receive_mqtt_webhook(data: BrokerWebhook):
 
 
     
-def log_info(req_body, res_body):
-    logging.info(req_body)
-    logging.info(res_body)
+# def log_info(req_body, res_body):
+#     logging.info(req_body)
+#     logging.info(res_body)
 
-async def set_body(request: Request, body: bytes):
-    async def receive() -> Message:
-        return {'type': 'http.request', 'body': body}
-    request._receive = receive
+# async def set_body(request: Request, body: bytes):
+#     async def receive() -> Message:
+#         return {'type': 'http.request', 'body': body}
+#     request._receive = receive
 
-@app.middleware('http')
-async def some_middleware(request: Request, call_next):
-    req_body = await request.body()
-    await set_body(request, req_body)
-    response = await call_next(request)
+# @app.middleware('http')
+# async def some_middleware(request: Request, call_next):
+#     req_body = await request.body()
+#     await set_body(request, req_body)
+#     response = await call_next(request)
     
-    res_body = b''
-    async for chunk in response.body_iterator:
-        res_body += chunk
+#     res_body = b''
+#     async for chunk in response.body_iterator:
+#         res_body += chunk
     
-    task = BackgroundTask(log_info, req_body, res_body)
-    return Response(content=res_body, status_code=response.status_code, 
-        headers=dict(response.headers), media_type=response.media_type, background=task)
+#     task = BackgroundTask(log_info, req_body, res_body)
+#     return Response(content=res_body, status_code=response.status_code, 
+#         headers=dict(response.headers), media_type=response.media_type, background=task)
 
 def load_config():
     global supabase_url, supabase_service_key, emqx_broker_ip, emqx_broker_http_port, emqx_api_key, emqx_secret, api_hostname, api_port, supabase_client, emqx_headers, emqx_broker_url
@@ -336,7 +346,7 @@ if __name__ == "__main__":
     import uvicorn
     load_config()
     print("API Token:" + encode_jwt({
-        "test" : "test"
+        "aud" : "authenticated",
     }))
 
     print("Broker Token: " + encode_broker_jwt({

@@ -125,23 +125,7 @@ class ControlUnitParameters(BaseModel):
     format_device: bool # Erase all rule and schedule data on the device.
     reset_device: bool # Erase all data on the device, factory resetting it.
 
-# Egress Packets
 
-class EgressMessage(BaseModel):
-    """ Format of all egress data types.
-
-
-        `type` type of data contained:
-        - 0 - rules
-        - 1 - schedule
-        - 2 - parameters
-
-        `data` - contained data.
-
-    """
-
-    type: int
-    data: Union[RuleUpdateMessage, ScheduleUpdateMessage, ControlUnitParameters]
 
 """
 EMQX Broker Communication
@@ -185,3 +169,65 @@ class ControlUnitJWTInfo(BaseModel):
     port: int
     exp: int
     acl: ACL
+
+
+""" Time of Use Pricing """
+class SeasonDate(BaseModel):
+    """Date of the year."""
+    day: int
+    month: int
+
+class HourPeriod(BaseModel):
+    start: int
+    end: int
+
+class PublicHoliday(BaseModel):
+    """Public holiday information."""
+    day: int
+    month: int
+    year: int
+    treat_as: int # Day of week to treat this day as.
+
+class TOUSeason(BaseModel):
+    """TOU Season of the year."""
+    name: str
+    start_date: SeasonDate
+    end_date: SeasonDate
+
+class TOUBasePrice(BaseModel):
+    """Base price of electricity."""
+    season: str
+    price: float
+
+class TOUPeriodPrice(BaseModel):
+    """TOU period price of electricity."""
+    season: str
+    price: float
+    days: List[int]
+    times: List[HourPeriod]
+
+class TOUSchedule(BaseModel): 
+    """Time of Use Tariff Pricing Schedule."""
+    seasons: List[TOUSeason]
+    base_prices: List[TOUBasePrice]
+    tou_prices: List[TOUPeriodPrice]
+    public_holidays: List[PublicHoliday]
+
+# Egress Packets
+
+class EgressMessage(BaseModel):
+    """ Format of all egress data types.
+
+
+        `type` type of data contained:
+        - 0 - rules
+        - 1 - schedule
+        - 2 - parameters
+        - 3 - TOU Schedule
+
+        `data` - contained data.
+
+    """
+
+    type: int
+    data: Union[RuleUpdateMessage, ScheduleUpdateMessage, ControlUnitParameters, TOUSchedule]

@@ -1,0 +1,256 @@
+{
+    "seasons" : [
+      {
+        "name" : "low",
+        "start_date" : {
+          "day" : 1,
+          "month" : 9
+        },
+        "end_date" : {
+          "day": 31,
+          "month": 5
+        }
+      },
+      {
+        "name": "high",
+        "start_date": {
+          "day": 1,
+          "month": 6
+        },
+        "end_date": {
+          "day": 31,
+          "month": 8
+        }
+      }
+    ],
+    "base_prices" : [
+      {
+        "season" : "low",
+        "price" : 0.6746
+      }, 
+      {
+        "season": "high",
+        "price": 0.7794
+      }
+    ],
+    "tou_prices" : [
+      {
+        "season" : "low",
+        "price" : 1.0633,
+        "days" : [2, 3, 4, 5, 6],
+        "times" : [
+          {
+            "start" : 6,
+            "end" : 7
+          },
+          {
+            "start" : 10,
+            "end" : 18
+          },
+          {
+            "start": 20,
+            "end": 22
+          }
+        ]
+      },
+      {
+        "season": "low",
+        "price": 1.0633,
+        "days": [
+          7
+        ],
+        "times": [
+          {
+            "start": 7,
+            "end": 12
+          },
+          {
+            "start": 18,
+            "end": 20
+          }
+        ]
+      },
+      {
+        "season": "low",
+        "price": 1.5452,
+        "days": [
+          2,3,4,5,6
+        ],
+        "times": [
+          {
+            "start": 7,
+            "end": 10
+          },
+          {
+            "start": 18,
+            "end": 20
+          }
+        ]
+      },
+      {
+        "season": "high",
+        "price": 1.435,
+        "days": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "times": [
+          {
+            "start": 9,
+            "end": 17
+          },
+          {
+            "start": 19,
+            "end": 22
+          }
+        ]
+      },
+      {
+        "season": "high",
+        "price": 1.435,
+        "days": [
+          7
+        ],
+        "times": [
+          {
+            "start": 6,
+            "end": 9
+          },
+          {
+            "start": 17,
+            "end": 19
+          }
+        ]
+      },
+      {
+        "season": "high",
+        "price": 4.7376,
+        "days": [
+          2,3,4,5,6
+        ],
+        "times": [
+          {
+            "start": 6,
+            "end": 9
+          },
+          {
+            "start": 17,
+            "end": 19
+          }
+        ]
+      }
+    ],
+    "public_holidays" :[
+      {
+        "day": 15,
+        "month": 4,
+        "year": 2022,
+        "treat_as": 1
+      },
+      {
+        "day": 18,
+        "month": 4,
+        "year": 2022,
+        "treat_as": 1
+      },
+      {
+        "day": 27,
+        "month": 4,
+        "year": 2022,
+        "treat_as": 7
+      },
+      {
+        "day": 1,
+        "month": 5,
+        "year": 2022,
+        "treat_as": 1
+      },
+      {
+        "day": 2,
+        "month": 5,
+        "year": 2022,
+        "treat_as": 7
+      },
+      {
+        "day": 16,
+        "month": 6,
+        "year": 2022,
+        "treat_as": 7
+      },
+      {
+        "day": 9,
+        "month": 8,
+        "year": 2022,
+        "treat_as": 7
+      },
+      {
+        "day": 24,
+        "month": 9,
+        "year": 2022,
+        "treat_as": 7
+      },
+      {
+        "day": 16,
+        "month": 12,
+        "year": 2022,
+        "treat_as": 7
+      },
+      {
+        "day": 25,
+        "month": 12,
+        "year": 2022,
+        "treat_as": 1
+      },
+      {
+        "day": 26,
+        "month": 12,
+        "year": 2022,
+        "treat_as": 1
+      },
+      {
+        "day": 1,
+        "month": 1,
+        "year": 2023,
+        "treat_as": 1
+      },
+      {
+        "day": 21,
+        "month": 3,
+        "year": 2023,
+        "treat_as": 7
+      },
+      {
+        "day": 7,
+        "month": 4,
+        "year": 2023,
+        "treat_as": 1
+      },
+      {
+        "day": 10,
+        "month": 4,
+        "year": 2023,
+        "treat_as": 1
+      },
+      {
+        "day": 27,
+        "month": 4,
+        "year": 2023,
+        "treat_as": 7
+      },
+      {
+        "day": 1,
+        "month": 5,
+        "year": 2023,
+        "treat_as": 7
+      },
+      {
+        "day": 16,
+        "month": 6,
+        "year": 2023,
+        "treat_as": 7
+      }
+    ]
+  }
