@@ -29,7 +29,8 @@ from models import (
     ScheduleUpdateMessage,
     ScheduleItem,
     ControlUnitParameters,
-    TOUSchedule
+    TOUSchedule,
+    TagUpdateMessage
 )
 
 logging.basicConfig(filename='info.log', level=logging.DEBUG)
@@ -178,6 +179,15 @@ async def send_rules(unit_id: str, payload: RuleUpdateMessage):
 async def send_tou_structure(unit_id: str, payload: TOUSchedule):
     to_send = EgressMessage(
         type=3,
+        data=payload
+    )
+
+    return await publish_message("/egress/" + unit_id, to_send)
+
+@app.post("/mqtt/v1/tags", dependencies=[Depends(JWTBearer())])
+async def send_tags(unit_id:str, payload: TagUpdateMessage):
+    to_send = EgressMessage(
+        type=4,
         data=payload
     )
 

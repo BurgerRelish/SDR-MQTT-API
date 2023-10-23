@@ -213,6 +213,22 @@ class TOUSchedule(BaseModel):
     tou_prices: List[TOUPeriodPrice]
     public_holidays: List[PublicHoliday]
 
+# Tags
+class TagList(BaseModel):
+    """List of tags."""
+    module_id: str
+    tags: List[str]
+
+class TagUpdateMessage(BaseModel):
+    """Packet sent to the control module to configure tags.
+    
+    Action:
+    - 0 - "append" - Appends the tags to the current tags.
+    - 1 - "replace" - Replaces the current tags with the provided one(s).
+    """
+    action: int
+    tags: List[TagList]
+
 # Egress Packets
 
 class EgressMessage(BaseModel):
@@ -224,10 +240,11 @@ class EgressMessage(BaseModel):
         - 1 - schedule
         - 2 - parameters
         - 3 - TOU Schedule
+        - 4 - tags
 
         `data` - contained data.
 
     """
 
     type: int
-    data: Union[RuleUpdateMessage, ScheduleUpdateMessage, ControlUnitParameters, TOUSchedule]
+    data: Union[RuleUpdateMessage, ScheduleUpdateMessage, ControlUnitParameters, TOUSchedule, TagUpdateMessage]
